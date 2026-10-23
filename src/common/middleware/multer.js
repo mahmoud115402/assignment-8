@@ -5,8 +5,8 @@ import fs from "fs"
 export const Localmulter = (customPath = "general", customTypes = []) => {
 const pathFolder = `./uploads/${customPath}`;
 
-if (!fs.existsSync(`pathfolder`)) {
-    fs.mkdirSync(`pathfolder`, { recursive: true });
+if (!fs.existsSync(pathFolder)) {
+    fs.mkdirSync(pathFolder, { recursive: true });
   }
 
   const storage = multer.diskStorage({

@@ -17,10 +17,3 @@ export const findByIdAndUpdate = async ({ model, id, update, options = {} } = {}
     ...options,
   });
 };
-
-export default {
-  create,
-  findOne,
-  findById,
-  findByIdAndUpdate
-} 

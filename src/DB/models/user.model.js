@@ -32,7 +32,10 @@ phone: { type: String, trim: true },
     enum: Object.values(providerEnum),
     default: providerEnum.SYSTEM
  },
- isConfirmed: { type: Boolean, default: false }
+ 
+ isConfirmed: { type: Boolean, default: false },
+
+ changeCredentialAt:Date,
   },
   {timestamps: true,
     strict: true,
@@ -40,6 +43,7 @@ phone: { type: String, trim: true },
     toJSON:{virtuals:true},
 toObject:{virtuals:true}
   }
+
 );
 usersSchema.virtual("username").get(function () {
   return `${this.fname} ${this.lname}`;

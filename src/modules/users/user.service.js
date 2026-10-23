@@ -23,7 +23,7 @@ export const signup = async (req, res, next) => {
 
   const user = await dbsevice.create({
     model: usermodel,
-   data: { fname, lname, email, password : await Hash(password), age, gender , phone : Encrypt(phone) },
+   data: { fname, lname, email, password : await Hash(password), age, gender , phone : Encrypt(phone), profileImage: req.file?.path },
  });
 
   return res.status(201).json({ message: "done", user });
@@ -59,7 +59,7 @@ export const signin = async (req, res, next) => {
   const { email, password } = req.body;
   const user = await dbsevice.findOne({
     model: usermodel,
-    filter: { email: email.toLowerCase(), provider: providerEnum.SYSTEM },
+    filter: { email: email.toLowerCase(),provider: providerEnum.SYSTEM },
   });
 
   if (!user) {
@@ -70,9 +70,9 @@ export const signin = async (req, res, next) => {
  //   throw new Error("email not confirmed");
  // }
 
- // if (!await compare(password,user.password)) {
- //   throw new Error("invalid password");
- // }
+  if (!await compare(password,user.password)) {
+    throw new Error("invalid password");
+  }
 const accessToken = jwt.sign({ id: user._id , email: user.email }, "mahmoud123", { audience: "http://localhost:4000" , issuer: "http://localhost:3000"})
 const refreshToken = jwt.sign({ id: user._id }, "mahmoud1234")
 
@@ -88,14 +88,14 @@ export const getProfile = async (req, res, next) => {
 
 
  export const logout = async (req, res, next) => {
-  await dbsevice.findByIdAndUpdate({
-    model: usermodel,
-    id: req.user._id,
-    update: { changecredentialsAt: new Date() },
-  });
 
-  return res.status(200).json({ message: "done" });
- }
+    req.user.changeCredentialAt = new Date()
+
+    await req.user.save()
+
+    return res.status(200).json({ message: "Done" });
+};
+ 
 
 
  export const uploadProfileImage = async (req, res, next) => {
@@ -120,13 +120,13 @@ export const getProfile = async (req, res, next) => {
   if (!authorization) {
     throw new Error("authorization is required", { cause: 400 });
   }
-  const decoded = jwt.verify(token, "mahmoud1234");
+const decoded = jwt.verify(authorization, "mahmoud1234");
     if (!decoded?.id) {
       throw new Error("invalid token");
     }
   
-    const user = await findOne({
-      model: usermodel,
+const user = await dbsevice.findOne({
+        model: usermodel,
       filter: {
         _id: decoded.id,
       },
@@ -142,3 +142,65 @@ export const getProfile = async (req, res, next) => {
 
   return res.status(200).json({ message: "done", accessToken });
     };
+
+    export const shareProfile = async (req, res, next) => {
+    const {id} = req.params; 
+    const user = await dbsevice.findById({
+      model: usermodel,
+      id: id,
+      options: { password: -1 }
+    });
+    if(!user){
+      throw new Error("user not found");
+    }
+    return res.status(200).json({ message: "Done" , user });
+
+ };
+
+
+
+export const updateProfile = async (req, res, next) => {
+    const { fname, lname, age, gender, phone } = req.body
+
+    let updateQuery = {}
+
+    if (fname !== undefined) {
+        updateQuery.fname = fname
+    }
+    if (lname !== undefined) {
+        updateQuery.lname = lname
+    }
+    if (age !== undefined) {
+        updateQuery.age = age
+    }
+    if (gender !== undefined) {
+        updateQuery.gender = gender
+    }
+    if (phone !== undefined) {
+        updateQuery.phone = Encrypt(phone)
+    }
+
+    let user = await dbsevice.findByIdAndUpdate({
+        model: usermodel,
+        id: req.user._id,
+        update: updateQuery,
+    })
+
+    return res.status(201).json({ message: "Donne", user })
+};
+
+export const updatePassword = async (req, res, next) => {
+    const { oldPassword, newPassword } = req.body
+
+    console.log(!Compare(oldPassword, req.user.password));
+
+    if (!await Compare(oldPassword, req.user.password)) {
+        throw new Error("InValid old password");
+    }
+
+    req.user.password = await Hash(newPassword)
+
+    await req.user.save()
+
+    return res.status(201).json({ message: "Donne", user })
+};
