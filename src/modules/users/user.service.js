@@ -85,3 +85,60 @@ export const getProfile = async (req, res, next) => {
     return res.status(200).json({ message: "Done" , user: req.user });
 
  };
+
+
+ export const logout = async (req, res, next) => {
+  await dbsevice.findByIdAndUpdate({
+    model: usermodel,
+    id: req.user._id,
+    update: { changecredentialsAt: new Date() },
+  });
+
+  return res.status(200).json({ message: "done" });
+ }
+
+
+ export const uploadProfileImage = async (req, res, next) => {
+  if (!req.file) {
+    throw new Error("image is required", { cause: 400 });
+  }
+
+  const user = await dbsevice.findByIdAndUpdate({
+    model: usermodel,
+    id: req.user._id,
+    update: { profileImage: req.file.path },
+  });
+
+  return res.status(200).json({ message: "done", user });
+ }
+
+
+ export const refreshtoken = async (req, res, next) => {
+
+  const { authorization } = req.headers;
+
+  if (!authorization) {
+    throw new Error("authorization is required", { cause: 400 });
+  }
+  const decoded = jwt.verify(token, "mahmoud1234");
+    if (!decoded?.id) {
+      throw new Error("invalid token");
+    }
+  
+    const user = await findOne({
+      model: usermodel,
+      filter: {
+        _id: decoded.id,
+      },
+    });
+    if (!user) {
+      throw new Error("user not exist");
+    }
+  
+    if (user.changecredentialsAt && (user.changecredentialsAt.getTime() / 1000) > decoded.iat) {
+      throw new Error("token is invalid");
+    }
+  const accessToken = jwt.sign({ id: user._id , email: user.email }, "mahmoud123", { audience: "http://localhost:4000" , issuer: "http://localhost:3000"})
+
+  return res.status(200).json({ message: "done", accessToken });
+    };
